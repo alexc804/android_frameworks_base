@@ -1394,7 +1394,7 @@ public final class Settings {
         public static final int SCREEN_BRIGHTNESS_MODE_MANUAL = 0;
 
         /**
-         * SCREEN_BRIGHTNESS_MODE value for manual mode.
+         * SCREEN_BRIGHTNESS_MODE value for automatic mode.
          */
         public static final int SCREEN_BRIGHTNESS_MODE_AUTOMATIC = 1;
 
@@ -1541,6 +1541,22 @@ public final class Settings {
         public static final String ALWAYS_FINISH_ACTIVITIES =
                 "always_finish_activities";
 
+
+        /**
+         * Volume Overlay Mode, This is behaviour of the volume overlay panel
+         * Defaults to 0 - which is simple
+         * @hide
+         */
+        public static final String MODE_VOLUME_OVERLAY = "mode_volume_overlay";
+
+        /** @hide */
+        public static final int VOLUME_OVERLAY_SINGLE = 0;
+        /** @hide */
+        public static final int VOLUME_OVERLAY_EXPANDABLE = 1;
+        /** @hide */
+        public static final int VOLUME_OVERLAY_EXPANDED = 2;
+        /** @hide */
+        public static final int VOLUME_OVERLAY_NONE = 3;
 
         /**
          * Ringer mode. This is used internally, changing this value will not
@@ -1938,7 +1954,7 @@ public final class Settings {
          * Which custom LED values to use for the notification pulse LED.
          * @hide
          */
-        public static final String NOTIFICATION_LIGHT_PULSE_CUSTOM_VALUES = "notification_light_pulse_custom_enable";
+        public static final String NOTIFICATION_LIGHT_PULSE_CUSTOM_VALUES = "notification_light_pulse_custom_values";
 
         /**
          * Show pointer location on screen?
@@ -1971,6 +1987,12 @@ public final class Settings {
          * @hide
          */
         public static final String POWER_SOUNDS_ENABLED = "power_sounds_enabled";
+
+        /**
+         * Whether to route USB Audio when docked.
+         * @hide
+         */
+        public static final String DOCK_USB_AUDIO_ENABLED = "dock_usb_audio_enabled";
 
         /**
          * Whether to play a sound for dock events.
@@ -2214,7 +2236,7 @@ public final class Settings {
          *
          * @hide
          */
-        public static final String STATUS_BAR_BRIGHTNESS_TOGGLE = "status_bar_brightness_toggle";
+        public static final String STATUS_BAR_BRIGHTNESS_CONTROL = "status_bar_brightness_control";
 
         /**
          * Whether to use a separate delay for "slide to unlock" and security
@@ -2261,6 +2283,12 @@ public final class Settings {
          * @hide
          */
         public static final String VOLUME_WAKE_SCREEN = "volume_wake_screen";
+
+        /**
+         * Whether or not volume button music controls should be enabled to seek media tracks
+         * @hide
+         */
+        public static final String VOLBTN_MUSIC_CONTROLS = "volbtn_music_controls";
 
         /**
          * Whether national data roaming should be used.
@@ -3032,10 +3060,10 @@ public final class Settings {
 
         /**
          * Whether the package installer should allow installation of apps downloaded from
-         * sources other than the Android Market (vending machine).
+         * sources other than Google Play.
          *
          * 1 = allow installing from other sources
-         * 0 = only allow installing from the Android Market
+         * 0 = only allow installing from Google Play
          */
         public static final String INSTALL_NON_MARKET_APPS = "install_non_market_apps";
 
@@ -4092,11 +4120,20 @@ public final class Settings {
                 "pdp_watchdog_max_pdp_reset_fail_count";
 
         /**
-         * The number of milliseconds to delay when checking for data stalls
+         * The number of milliseconds to delay when checking for data stalls during
+         * non-aggressive detection. (screen is turned off.)
          * @hide
          */
-        public static final String DATA_STALL_ALARM_DELAY_IN_MS =
-                "data_stall_alarm_delay_in_ms";
+        public static final String DATA_STALL_ALARM_NON_AGGRESSIVE_DELAY_IN_MS =
+                "data_stall_alarm_non_aggressive_delay_in_ms";
+
+        /**
+         * The number of milliseconds to delay when checking for data stalls during
+         * aggressive detection. (screen on or suspected data stall)
+         * @hide
+         */
+        public static final String DATA_STALL_ALARM_AGGRESSIVE_DELAY_IN_MS =
+                "data_stall_alarm_aggressive_delay_in_ms";
 
         /**
          * The interval in milliseconds at which to check gprs registration
