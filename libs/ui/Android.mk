@@ -42,7 +42,6 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= \
 	$(commonSources) \
-	Overlay.cpp \
 	EGLUtils.cpp \
 	FramebufferNativeWindow.cpp \
 	GraphicBuffer.cpp \
@@ -52,6 +51,7 @@ LOCAL_SRC_FILES:= \
 	InputTransport.cpp \
 	PixelFormat.cpp \
 	Rect.cpp \
+	Overlay.cpp \
 	Region.cpp
 
 LOCAL_SHARED_LIBRARIES := \

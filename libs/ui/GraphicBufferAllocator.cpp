@@ -103,8 +103,20 @@ status_t GraphicBufferAllocator::alloc(uint32_t w, uint32_t h, PixelFormat forma
     if (format == HAL_PIXEL_FORMAT_YV12) {
 	format = HAL_PIXEL_FORMAT_RGBX_8888;
     }
+    if (format == 27) { //OMX_COLOR_FormatCbYCrY
+        format = HAL_PIXEL_FORMAT_RGB_565;
+    }
+//    if (usage & GRALLOC_USAGE_EXTERNAL_DISP) {
+//	usage ^= GRALLOC_USAGE_EXTERNAL_DISP;
+//    }
+    if (!(usage & GRALLOC_USAGE_SW_READ_MASK)) {
+        usage |= GRALLOC_USAGE_SW_READ_RARELY;
+    }
+    if (!(usage & GRALLOC_USAGE_SW_WRITE_MASK)) {
+        usage |= GRALLOC_USAGE_SW_WRITE_RARELY;
+    }
     if (usage & GRALLOC_USAGE_EXTERNAL_DISP) {
-	usage ^= GRALLOC_USAGE_EXTERNAL_DISP;
+        usage &= ~GRALLOC_USAGE_EXTERNAL_DISP;
     }
 #endif
     err = mAllocDev->alloc(mAllocDev, w, h, format, usage, handle, stride);
