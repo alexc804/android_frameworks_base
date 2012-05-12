@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
  * Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
+ * This code has been modified.  Portions copyright (C) 2010, T-Mobile USA, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +24,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentService;
-import android.content.ContextWrapper;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.IPackageManager;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.AudioService;
 import android.net.wifi.p2p.WifiP2pService;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -60,14 +60,12 @@ import com.android.server.pm.PackageManagerService;
 import com.android.server.usb.UsbService;
 import com.android.server.wm.WindowManagerService;
 
-import dalvik.system.DexClassLoader;
 import dalvik.system.VMRuntime;
 import dalvik.system.Zygote;
 
 import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.lang.reflect.Constructor;
 
 class ServerThread extends Thread {
     private static final String TAG = "SystemServer";
@@ -79,19 +77,6 @@ class ServerThread extends Thread {
     void reportWtf(String msg, Throwable e) {
         Slog.w(TAG, "***********************************************");
         Log.wtf(TAG, "BOOT FAILURE " + msg, e);
-    }
-
-    private class AdbSettingsObserver extends ContentObserver {
-        public AdbSettingsObserver() {
-            super(null);
-        }
-        @Override
-        public void onChange(boolean selfChange) {
-            boolean enableAdb = (Settings.Secure.getInt(mContentResolver,
-                Settings.Secure.ADB_ENABLED, 0) > 0);
-            // setting this secure property will start or stop adbd
-            SystemProperties.set("persist.service.adb.enable", enableAdb ? "1" : "0");
-        }
     }
 
     private class AdbPortObserver extends ContentObserver {
@@ -619,38 +604,11 @@ class ServerThread extends Thread {
                 reportWtf("starting NetworkTimeUpdate service", e);
             }
 
-            String[] vendorServices = context.getResources().getStringArray(
-                    com.android.internal.R.array.config_vendorServices);
-
-            if (vendorServices != null && vendorServices.length > 0) {
-                String cachePath = new ContextWrapper(context).getCacheDir().getAbsolutePath();
-                ClassLoader parentLoader = ClassLoader.getSystemClassLoader();
-
-                for (String service : vendorServices) {
-                    String[] parts = service.split(":");
-                    if (parts.length != 2) {
-                        Slog.e(TAG, "Found invalid vendor service " + service);
-                        continue;
-                    }
-
-                    String jarPath = parts[0];
-                    String className = parts[1];
-
-                    try {
-                        /* Intentionally skipping all null checks in this block, as we also want an
-                           error message if class loading or ctor resolution failed. The catch block
-                           conveniently provides that for us also for NullPointerException */
-                        DexClassLoader loader = new DexClassLoader(jarPath, cachePath, null, parentLoader);
-                        Class<?> klass = loader.loadClass(className);
-                        Constructor<?> ctor = klass.getDeclaredConstructors()[0];
-                        Object instance = ctor.newInstance(context);
-
-                        ServiceManager.addService(klass.getSimpleName(), (IBinder) instance);
-                        Slog.i(TAG, "Vendor service " + className + " started.");
-                    } catch (Exception e) {
-                        Slog.e(TAG, "Starting vendor service " + className + " failed.", e);
-                    }
-                }
+            try {
+                Slog.i(TAG, "AssetRedirectionManager Service");
+                ServiceManager.addService("assetredirection", new AssetRedirectionManagerService(context));
+            } catch (Throwable e) {
+                Slog.e(TAG, "Failure starting AssetRedirectionManager Service", e);
             }
         }
 
@@ -658,17 +616,10 @@ class ServerThread extends Thread {
         Settings.Secure.putInt(mContentResolver, Settings.Secure.ADB_PORT,
                 Integer.parseInt(SystemProperties.get("service.adb.tcp.port", "-1")));
 
-        Settings.Secure.putInt(mContentResolver, Settings.Secure.ADB_ENABLED,
-                "1".equals(SystemProperties.get("persist.service.adb.enable")) ? 1 : 0);
-
         // register observer to listen for settings changes
         mContentResolver.registerContentObserver(
             Settings.Secure.getUriFor(Settings.Secure.ADB_PORT),
             false, new AdbPortObserver());
-
-        mContentResolver.registerContentObserver(
-            Settings.Secure.getUriFor(Settings.Secure.ADB_ENABLED),
-            false, new AdbSettingsObserver());
 
         // Before things start rolling, be sure we have decided whether
         // we are in safe mode.
@@ -727,6 +678,15 @@ class ServerThread extends Thread {
         } catch (Throwable e) {
             reportWtf("making Package Manager Service ready", e);
         }
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_APP_LAUNCH_FAILURE);
+        filter.addAction(Intent.ACTION_APP_LAUNCH_FAILURE_RESET);
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
+        filter.addDataScheme("package");
+        context.registerReceiver(new AppsLaunchFailureReceiver(), filter);
 
         // These are needed to propagate to the runnable below.
         final Context contextF = context;
