@@ -899,8 +899,11 @@ status_t SurfaceTexture::updateTexImage() {
             ST_LOGW("updateTexImage: clearing GL error: %#04x", error);
         }
 
-        glBindTexture(mTexTarget, mTexName);
-        glEGLImageTargetTexture2DOES(mTexTarget, (GLeglImageOES)image);
+//        glBindTexture(mTexTarget, mTexName);
+//        glEGLImageTargetTexture2DOES(mTexTarget, (GLeglImageOES)image);
+
+        glBindTexture(getCurrentTextureTarget(), mTexName);
+        glEGLImageTargetTexture2DOES(getCurrentTextureTarget(), (GLeglImageOES)image);
 
         bool failed = false;
         while ((error = glGetError()) != GL_NO_ERROR) {
@@ -957,7 +960,8 @@ status_t SurfaceTexture::updateTexImage() {
         mDequeueCondition.signal();
     } else {
         // We always bind the texture even if we don't update its contents.
-        glBindTexture(mTexTarget, mTexName);
+//      glBindTexture(mTexTarget, mTexName);
+        glBindTexture(getCurrentTextureTarget(), mTexName);
     }
 
     return OK;
@@ -983,6 +987,10 @@ bool SurfaceTexture::isExternalFormat(uint32_t format)
 }
 
 GLenum SurfaceTexture::getCurrentTextureTarget() const {
+    if (mTexTarget == GL_TEXTURE_EXTERNAL_OES) {
+        return GL_TEXTURE_2D;
+    }
+
     return mTexTarget;
 }
 

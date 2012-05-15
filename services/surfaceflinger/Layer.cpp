@@ -44,6 +44,7 @@
 #endif
 
 #define DEBUG_RESIZE    0
+#define GL_TEXTURE_EXTERNAL_OES GL_TEXTURE_2D
 
 
 namespace android {
