@@ -107,9 +107,8 @@ Overlay::Overlay(uint32_t width, uint32_t height, OverlayFormats format, overlay
         if (mBuffers[i].ptr == MAP_FAILED) {
             LOGE("%s: Failed to mmap buffer %d", __FUNCTION__, i);
             mBuffers[i].ptr = NULL;
+            continue;
         }
-
-        memset(mBuffers[i].ptr, 0, BUFFER_SIZE);
 
         mQueued[i]=false;
     }
@@ -121,28 +120,36 @@ Overlay::Overlay(uint32_t width, uint32_t height, OverlayFormats format, overlay
 }
 
 void Overlay::destroy() {
+    int fd = 0;
     LOGV("%s", __FUNCTION__);
-    if (mBuffers != NULL) {
-        for(uint32_t i=0; i<NUM_BUFFERS; i++) {
-            if (mBuffers[i].ptr != NULL && munmap(mBuffers[i].ptr, mBuffers[i].length) < 0) {
-                LOGW("%s: unmap of buffer %d failed", __FUNCTION__, i);
-            }
-            mBuffers[i].ptr = NULL;
-            if (mBuffers[i].fd > 0) {
-                close(mBuffers[i].fd);
-            }
+
+//    pthread_mutex_lock(&queue_mutex);
+
+    for (uint32_t i = 0; i < NUM_BUFFERS; i++) {
+        if (mBuffers[i].ptr != NULL && munmap(mBuffers[i].ptr, mBuffers[i].length) < 0) {
+            LOGW("%s: unmap of buffer %d failed", __FUNCTION__, i);
         }
-        delete[] mBuffers;
-        mBuffers=NULL;
+        if (mBuffers[i].fd > 0) {
+            if (fd > 0 && fd != mBuffers[i].fd) {
+                LOGD("%s: multiple fd detected, closing fd %d...", __FUNCTION__, fd);
+                close(fd);
+            }
+            fd = mBuffers[i].fd;
+        }
     }
-    delete[] mQueued;
+    if (fd > 0) {
+        close(fd);
+    }
+
+    //delete[] mQueued;
+//    pthread_mutex_unlock(&queue_mutex);
     pthread_mutex_destroy(&queue_mutex);
 }
 
 Overlay::~Overlay() {
     if (mBuffers != NULL) {
         LOGV("%s: Destructor called without freeing buffers, doing it now...", __FUNCTION__);
-        destroy();
+        this->destroy();
     }
 }
 
