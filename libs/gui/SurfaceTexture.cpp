@@ -15,7 +15,7 @@
  */
 
 #define LOG_TAG "SurfaceTexture"
-//#define LOG_NDEBUG 0
+#define LOG_NDEBUG 0
 
 #define GL_GLEXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
@@ -46,6 +46,8 @@
 // implicit cross-process synchronization to prevent the buffer from being
 // written to before the buffer has (a) been detached from the GL texture and
 // (b) all GL reads from the buffer have completed.
+
+#undef ALLOW_DEQUEUE_CURRENT_BUFFER
 #ifdef ALLOW_DEQUEUE_CURRENT_BUFFER
 #define FLAG_ALLOW_DEQUEUE_CURRENT_BUFFER    true
 #warning "ALLOW_DEQUEUE_CURRENT_BUFFER enabled"
@@ -890,9 +892,6 @@ status_t SurfaceTexture::updateTexImage() {
         while ((error = glGetError()) != GL_NO_ERROR) {
             ST_LOGW("updateTexImage: clearing GL error: %#04x", error);
         }
-
-//        glBindTexture(mTexTarget, mTexName);
-//        glEGLImageTargetTexture2DOES(mTexTarget, (GLeglImageOES)image);
 
         glBindTexture(getCurrentTextureTarget(), mTexName);
         glEGLImageTargetTexture2DOES(getCurrentTextureTarget(), (GLeglImageOES)image);

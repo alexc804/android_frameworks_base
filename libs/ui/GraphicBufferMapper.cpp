@@ -48,10 +48,34 @@ status_t GraphicBufferMapper::registerBuffer(buffer_handle_t handle)
 {
     status_t err;
 
+#ifdef MISSING_GRALLOC_BUFFERS
+    int tries=5;
+#endif
+
     err = mAllocMod->registerBuffer(mAllocMod, handle);
+
+#ifdef MISSING_GRALLOC_BUFFERS
+    while (err && tries) {
+        usleep(1000);
+
+
+        LOGW_IF(err, "registerBuffer(%p) failed %d (%s)",
+                handle, err, strerror(-err));
+
+        err = mAllocMod->registerBuffer(mAllocMod, handle);
+
+        tries--;
+    }
+#endif
 
     LOGW_IF(err, "registerBuffer(%p) failed %d (%s)",
             handle, err, strerror(-err));
+
+
+    LOGW_IF(!err, "registerBuffer(%p) success %d (%s)",
+            handle, err, strerror(-err));
+    
+    
     return err;
 }
 
