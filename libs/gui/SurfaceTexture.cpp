@@ -47,7 +47,6 @@
 // written to before the buffer has (a) been detached from the GL texture and
 // (b) all GL reads from the buffer have completed.
 
-#undef ALLOW_DEQUEUE_CURRENT_BUFFER
 #ifdef ALLOW_DEQUEUE_CURRENT_BUFFER
 #define FLAG_ALLOW_DEQUEUE_CURRENT_BUFFER    true
 #warning "ALLOW_DEQUEUE_CURRENT_BUFFER enabled"
@@ -284,6 +283,39 @@ status_t SurfaceTexture::requestBuffer(int slot, sp<GraphicBuffer>* buf) {
     }
     mSlots[slot].mRequestBufferCalled = true;
     *buf = mSlots[slot].mGraphicBuffer;
+
+    const sp<GraphicBuffer>& bbuf(mSlots[slot].mGraphicBuffer);
+
+    LOGV("requestBuffer: %p [%4ux%4u:%4u,%3X]",
+                    bbuf->handle, bbuf->width, bbuf->height, bbuf->stride,
+                    bbuf->format);
+/*
+
+    for (int i=0 ; i<mBufferCount ; i++) {
+        const BufferSlot& slot(mSlots[i]);
+        snprintf(buffer, SIZE,
+                "%s%s[%02d] "
+                "state=%-8s, crop=[%d,%d,%d,%d], "
+                "transform=0x%02x, timestamp=%lld",
+                prefix, (i==mCurrentTexture)?">":" ", i,
+                stateName(slot.mBufferState),
+                slot.mCrop.left, slot.mCrop.top, slot.mCrop.right,
+                slot.mCrop.bottom, slot.mTransform, slot.mTimestamp
+        );
+        result.append(buffer);
+
+        const sp<GraphicBuffer>& buf(slot.mGraphicBuffer);
+        if (buf != NULL) {
+            snprintf(buffer, SIZE,
+                    ", %p [%4ux%4u:%4u,%3X]",
+                    buf->handle, buf->width, buf->height, buf->stride,
+                    buf->format);
+            result.append(buffer);
+        }
+        result.append("\n");
+    }
+
+*/
     return NO_ERROR;
 }
 

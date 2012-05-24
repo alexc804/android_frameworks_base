@@ -176,6 +176,8 @@ int SurfaceTextureClient::dequeueBuffer(android_native_buffer_t** buffer) {
 
     *buffer = gbuf.get();
 
+    LOGD("dequeueBuffer: width=%d, height=%d", gbuf->width, gbuf->height);
+
     return OK;
 }
 
@@ -681,24 +683,19 @@ status_t SurfaceTextureClient::lock(
     }
 
     ANativeWindowBuffer* out;
+
     status_t err = dequeueBuffer(&out);
     LOGE_IF(err, "dequeueBuffer failed (%s)", strerror(-err));
     if (err == NO_ERROR) {
         sp<GraphicBuffer> backBuffer(GraphicBuffer::getSelf(out));
 
-        LOGV("SurfaceTextureClient::lock lockBuffer");
-
         err = lockBuffer(backBuffer.get());
-
-        LOGV("SurfaceTextureClient::lock lockBuffer done");
 
         LOGE_IF(err, "lockBuffer (handle=%p) failed (%s)",
                 backBuffer->handle, strerror(-err));
 
         if (err == NO_ERROR) {
             const Rect bounds(backBuffer->width, backBuffer->height);
-
-            LOGV("SurfaceTextureClient::lock backBuffer->width: %d, backBuffer->height:%d ", backBuffer->width, backBuffer->height);
 
             Region newDirtyRegion;
             if (inOutDirtyBounds) {
@@ -714,9 +711,6 @@ status_t SurfaceTextureClient::lock(
                     backBuffer->width  == frontBuffer->width &&
                     backBuffer->height == frontBuffer->height &&
                     backBuffer->format == frontBuffer->format);
-
-            if(frontBuffer != 0)
-                LOGV("SurfaceTextureClient::lock frontBuffer->width: %d, frontBuffer->height:%d ", frontBuffer->width, frontBuffer->height);
 
 #ifdef QCOM_HARDWARE
             int bufferCount;
@@ -740,9 +734,7 @@ status_t SurfaceTextureClient::lock(
 #endif
                 if (!copyback.isEmpty())
                 {
-                    LOGV("SurfaceTextureClient::lock copyBlt");
                     copyBlt(backBuffer, frontBuffer, copyback);
-                    LOGV("SurfaceTextureClient::lock copyBlt done");
                 }
             } else {
                 // if we can't copy-back anything, modify the user's dirty
@@ -771,13 +763,9 @@ status_t SurfaceTextureClient::lock(
 
             void* vaddr;
             
-            LOGV("SurfaceTextureClient::lock backBuffer->lock");
-
             status_t res = backBuffer->lock(
                     GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_SW_WRITE_OFTEN,
                     newDirtyRegion.bounds(), &vaddr);
-
-            LOGV("SurfaceTextureClient::lock backBuffer->lock done");
 
             LOGW_IF(res, "failed locking buffer (handle = %p)",
                     backBuffer->handle);
